@@ -12,6 +12,8 @@ object DockerUtils {
 
 	// just a wrapper for trying shell commands that can throw exceptions.
 	// returns either the output or an empty string
+	var vm: String = "default"
+
 	def tryCmd(cmd: ProcessBuilder): String = {
 		try {
 			cmd !! ProcessLogger(stdout append _)
@@ -63,7 +65,7 @@ object DockerUtils {
 		}
 	}
 
-	def getCerts(vm: String = "default"): String = {
+	def getCerts(vm: String = vm): String = {
 		val stdout = new StringBuilder
 		val dockerCertsR = new Regex("(?<=export DOCKER_CERT_PATH\\=\")[^\"]*?(?=\")")
 		val envDocker = tryCmd(s"docker-machine env $vm")

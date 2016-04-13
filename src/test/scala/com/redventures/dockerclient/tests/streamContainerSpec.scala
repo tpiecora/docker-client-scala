@@ -11,7 +11,7 @@ class streamContainerSpec extends FlatSpec with Matchers {
 		val ports = Set(4567)
 		DockerUtils.startDockerMachine()
 		val docker = new DockerClient(imageName = "tpiecora/atlas-stream:0.1", ports = ports)
-		docker.initDocker()
+		docker.reuseOrCreate()
 		docker.waitForPort(4567, 30)
 		assert(docker.checkPort(4567))
 		docker.kill()

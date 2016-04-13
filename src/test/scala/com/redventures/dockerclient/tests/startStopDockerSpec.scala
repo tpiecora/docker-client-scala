@@ -13,7 +13,7 @@ class startStopDockerSpec extends FlatSpec with Matchers {
 	}
 
 	"start docker-machine" must "start the vm" in {
-	assert(DockerUtils.startDockerMachine() == true)
+		assert(DockerUtils.startDockerMachine() == true)
 	}
 
 	"start docker-machine" must "say already started" in {
@@ -21,7 +21,7 @@ class startStopDockerSpec extends FlatSpec with Matchers {
 	}
 
 	"stop docker-machine" must "stop the vm" in {
-	assert(DockerUtils.stopDockerMachine() == true)
+		assert(DockerUtils.stopDockerMachine() == true)
 	}
 
 	"stop docker-machine" must "say already stopped" in {

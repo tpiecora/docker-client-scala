@@ -10,7 +10,7 @@ class storageContainerSpec extends FlatSpec with Matchers {
 	"storage service" must "be available" in {
 		DockerUtils.startDockerMachine()
 		val docker = new DockerClient(imageName = "tpiecora/atlas-storage:0.1")
-		docker.initDocker()
+		docker.reuseOrCreate()
 		docker.waitForPort(8000, 30)
 		assert(docker.checkPort(8000))
 		docker.kill()
