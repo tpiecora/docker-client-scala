@@ -14,7 +14,8 @@ class sparkContainerSpec extends FlatSpec with Matchers {
 		docker.reuseOrCreate()
 		docker.waitForPort(8088, 30)
 		assert(docker.checkPort(8088))
-//		docker.kill()
+		assert(docker.checkContainer().isDefined)
+		docker.kill()
 	}
 
 }

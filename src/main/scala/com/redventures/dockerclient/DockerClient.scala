@@ -2,7 +2,6 @@ package com.redventures.dockerclient
 
 import java.net.URI
 import java.nio.file.Paths
-import java.util
 
 import com.spotify.docker.client.DockerClient._
 import com.spotify.docker.client._
@@ -11,7 +10,6 @@ import com.spotify.docker.client.messages._
 import scala.collection.JavaConverters._
 import scala.sys.process.{ProcessLogger, _}
 import scala.util.control.NonFatal
-import scala.util.matching.Regex
 
 /**
   * Created by mpiecora on 4/5/16.
@@ -20,7 +18,8 @@ class DockerClient (
 					 val imageName: String,
 					 env: Map[String, String] = Map().empty,
 					 ports: Set[Int] = Set(8000),
-					 binds: List[String] = List()
+					 binds: List[String] = List(),
+					 val hostname: String = "localhost"
 				   ) {
 	var docker: DefaultDockerClient = _
 	var containerId: String = _
@@ -138,6 +137,7 @@ class DockerClient (
 
 			val config = ContainerConfig.builder()
 			  .image(imageName)
+			  .hostname(hostname)
 			  .networkDisabled(false)
 			  .env(env.map { case(k, v) => s"$k=$v" }.toSeq.asJava)
 			  .hostConfig(hostConfig)
@@ -247,7 +247,7 @@ class DockerClient (
 		if (c.isDefined && c.get.image() == imageName) {
 			dockerIp = DockerUtils.getIp()
 			containerId = c.get.id()
-//			initExisting(containerId)
+			//			initExisting(containerId)
 		}
 	}
 
@@ -266,11 +266,11 @@ class DockerClient (
 	}
 
 
-		// TODO add refresh method so that it will destroy and recreate any existing containers that we could potentially use
-		// TODO add class to store groups of containers
-		// TODO add container tracking
-		// TODO have option to sleep or delete containers
-		// TODO add intelligent checking where we can see if any containers have already been started that we can use for our tests
-		// TODO make dockerClient methods chainable for convenience and easier management
+	// TODO add refresh method so that it will destroy and recreate any existing containers that we could potentially use
+	// TODO add class to store groups of containers
+	// TODO add container tracking
+	// TODO have option to sleep or delete containers
+	// TODO add intelligent checking where we can see if any containers have already been started that we can use for our tests
+	// TODO make dockerClient methods chainable for convenience and easier management
 
-	}
+}
