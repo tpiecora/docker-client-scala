@@ -1,4 +1,4 @@
-package com.redventures.dockerclient
+package com.tpiecora.dockerclient
 
 import java.net.URI
 import java.nio.file.Paths
@@ -8,19 +8,12 @@ import com.spotify.docker.client._
 import com.spotify.docker.client.messages._
 
 import scala.collection.JavaConverters._
-import scala.sys.process.{ProcessLogger, _}
 import scala.util.control.NonFatal
 
 /**
   * Created by mpiecora on 4/5/16.
   */
-class DockerClient (
-					 val imageName: String,
-					 env: Map[String, String] = Map().empty,
-					 ports: Set[Int] = Set(8000),
-					 binds: List[String] = List(),
-					 val hostname: String = "localhost"
-				   ) {
+class DockerClient (val imageName: String, val hostname: String = "localhost") {
 	var docker: DefaultDockerClient = _
 	var containerId: String = _
 	var dockerIp: String = _
@@ -63,6 +56,15 @@ class DockerClient (
 	}
 	init()
 
+
+	def inspect(id: String = containerId): Option[ContainerInfo] = {
+		try {
+			Some(docker.inspectContainer(id))
+		} catch {
+			case e: Exception => None
+		}
+	}
+
 	def execCreate(cmd: Array[String]): String = {
 		//		val noDetach = new ExecCreateParam("Detach", "false")
 		//		val stdout = new ExecCreateParam("AttachStdout", "true")
@@ -71,13 +73,13 @@ class DockerClient (
 		val params = Seq(ExecCreateParam.tty(true))
 		docker.execCreate(containerId, cmd, params:_*)
 	}
-	def execCreateSingle(cmd: String): String = {
+	def execCreateSingle(cmd:  Array[String]): String = {
 		//		val noDetach = new ExecCreateParam("Detach", "false")
 		//		val stdout = new ExecCreateParam("AttachStdout", "true")
 		//		val stderr = new ExecCreateParam("AttachStderr", "true")
-		val aCmd: Array[String] = Array(cmd)
+		//val aCmd: Array[String] = Array(cmd)
 		val params = Seq(ExecCreateParam.tty(true), ExecCreateParam.attachStderr(true))
-		docker.execCreate(containerId, aCmd)
+		docker.execCreate(containerId, cmd)
 	}
 	def execStart(execId: String): String = {
 		val stream: LogStream = docker.execStart(execId)
@@ -117,7 +119,12 @@ class DockerClient (
 
 
 	// spins up a new container of the supplied image type
-	def initContainer(): Unit = {
+	def initContainer(
+					   extraHosts: List[String] = List(),
+					   env: Map[String, String] = Map().empty,
+					   ports: Set[Int] = Set(8000),
+					   binds: List[String] = List()
+	): Unit = {
 		try {
 			val portBindingsMap = for {
 				port <- ports
@@ -128,6 +135,7 @@ class DockerClient (
 			} yield s"${port}/tcp"
 
 			val hostConfig: HostConfig = HostConfig.builder()
+			  .extraHosts(extraHosts.asJava)
 			  .appendBinds(binds.asJava)
 			  .networkMode("bridge")
 			  .portBindings(
@@ -251,13 +259,17 @@ class DockerClient (
 		}
 	}
 
-	def reuseOrCreate(imgName:String = imageName): Unit = {
+	def reuseOrCreate(imgName:String = imageName,
+					  extraHosts: List[String] = List(),
+					  env: Map[String, String] = Map().empty,
+					  ports: Set[Int] = Set(8000),
+					  binds: List[String] = List()): Unit = {
 		// TODO should also probably make sure the container we are gonna reuse matches the ports specified by this instance
 		val exists = checkContainer(imgName)
 		println("checking for container " + imgName)
 		if (exists.isEmpty) {
 			println("no container count...creating")
-			initContainer()
+			initContainer(extraHosts = extraHosts, env = env, ports = ports, binds = binds)
 		} else {
 			println("ports ", exists.get.ports())
 			println("found existing...reusing")

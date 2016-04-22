@@ -1,4 +1,4 @@
-package com.redventures.dockerclient
+package com.tpiecora.dockerclient
 
 import java.net.{Inet4Address, InetAddress, NetworkInterface}
 
@@ -22,7 +22,7 @@ object DockerUtils {
 		}
 	}
 
-	def startDockerMachine(vm: String = "default"): Boolean = {
+	def startDockerMachine(vm: String = vm): Boolean = {
 		val checkRunning = tryCmd("docker-machine ls" #| s"grep $vm" #| "grep Running")
 		var res = false
 		if (checkRunning.length > 1) {
@@ -38,7 +38,7 @@ object DockerUtils {
 		res
 	}
 
-	def stopDockerMachine(vm: String = "default"): Boolean = {
+	def stopDockerMachine(vm: String = vm): Boolean = {
 		val checkRunning = tryCmd("docker-machine ls" #| s"grep $vm" #| "grep Running")
 		var res = false
 		if (checkRunning.length < 1) {
@@ -54,7 +54,7 @@ object DockerUtils {
 		res
 	}
 
-	def getIp(vm: String = "default"): String = {
+	def getIp(vm: String = vm): String = {
 		val checkRunning = tryCmd("docker-machine ls" #| s"grep $vm" #| "grep Running")
 		if (checkRunning.length < 1) {
 			null

@@ -2,8 +2,9 @@
 
 
 lazy val commonSettings = Seq(
-	scalaVersion := "2.11.8",
-	organization := "com.redventures",
+//	scalaVersion := "2.11.8",
+	crossScalaVersions := Seq("2.11.7", "2.10.6"),
+	organization := "com.tpiecora",
 	version := "0.1.0-SNAPSHOT",
 	resolvers ++= Seq(
 		//		"Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases",

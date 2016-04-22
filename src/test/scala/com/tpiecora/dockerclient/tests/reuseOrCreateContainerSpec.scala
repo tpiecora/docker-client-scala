@@ -1,6 +1,6 @@
-package com.redventures.dockerclient.tests
+package com.tpiecora.dockerclient.tests
 
-import com.redventures.dockerclient.{DockerClient, DockerUtils}
+import com.tpiecora.dockerclient.{DockerClient, DockerUtils}
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
