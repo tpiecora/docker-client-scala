@@ -1,4 +1,4 @@
-package com.tpiecora.dockerclient
+package com.github.tpiecora.dockerclient
 
 import java.net.URI
 import java.nio.file.Paths
@@ -16,15 +16,20 @@ import scala.util.control.NonFatal
 class DockerClient (val imageName: String, val hostname: String = "localhost") {
 	var docker: DefaultDockerClient = _
 	var containerId: String = _
-	var dockerIp: String = _
-	var externalPort: Int = _
+	var apiAddress: String = _
+	var containerIp: String = _
 
 	def init(): Unit = {
+		apiAddress = DockerUtils.getApiAddress()
 		try {
-			docker = DefaultDockerClient.builder()
-			  .uri(URI.create(s"https://${DockerUtils.getIp().toString()}:2376"))
-			  .dockerCertificates(new DockerCertificates(Paths.get(DockerUtils.getCerts())))
-			  .build()
+			docker = if (DockerUtils.dockerMachine) {
+				DefaultDockerClient.builder()
+				  .uri(URI.create(s"https://$apiAddress:2376"))
+				  .dockerCertificates(new DockerCertificates(Paths.get(DockerUtils.getCerts())))
+				  .build()
+			} else {
+				new DefaultDockerClient(apiAddress)
+			}
 
 			try {
 				docker.ping()
@@ -41,9 +46,6 @@ class DockerClient (val imageName: String, val hostname: String = "localhost") {
 					println(s"Docker image ${imageName} not found; pulling image from registry.")
 					docker.pull(imageName)
 			}
-
-			dockerIp = DockerUtils.getIp()
-
 		} catch {
 			case NonFatal(e) =>
 				println(e)
@@ -66,33 +68,22 @@ class DockerClient (val imageName: String, val hostname: String = "localhost") {
 	}
 
 	def execCreate(cmd: Array[String]): String = {
-		//		val noDetach = new ExecCreateParam("Detach", "false")
-		//		val stdout = new ExecCreateParam("AttachStdout", "true")
-		//		val stderr = new ExecCreateParam("AttachStderr", "true")
-
 		val params = Seq(ExecCreateParam.tty(true))
 		docker.execCreate(containerId, cmd, params:_*)
 	}
-	def execCreateSingle(cmd:  Array[String]): String = {
-		//		val noDetach = new ExecCreateParam("Detach", "false")
-		//		val stdout = new ExecCreateParam("AttachStdout", "true")
-		//		val stderr = new ExecCreateParam("AttachStderr", "true")
-		//val aCmd: Array[String] = Array(cmd)
-		val params = Seq(ExecCreateParam.tty(true), ExecCreateParam.attachStderr(true))
-		docker.execCreate(containerId, cmd)
-	}
+
 	def execStart(execId: String): String = {
 		val stream: LogStream = docker.execStart(execId)
-		//Thread.sleep(3000)
 		stream.readFully()
 	}
+
 	def execInspect(execId: String): ExecState = {
 		docker.execInspect(execId)
 	}
 
 	def checkPort(port: Int): Boolean = {
 		try {
-			val socket = new java.net.Socket(dockerIp, port)
+			val socket = new java.net.Socket(containerIp, port)
 			socket.close()
 			true
 		} catch {
@@ -124,15 +115,15 @@ class DockerClient (val imageName: String, val hostname: String = "localhost") {
 					   env: Map[String, String] = Map().empty,
 					   ports: Set[Int] = Set(8000),
 					   binds: List[String] = List()
-	): Unit = {
+					 ): Unit = {
 		try {
 			val portBindingsMap = for {
 				port <- ports
-			} yield (s"${port}/tcp" -> List(PortBinding.of("0,0,0,0", port)).asJava)
+			} yield s"$port/tcp" -> List(PortBinding.of("0,0,0,0", port)).asJava
 
 			val exposedPorts = for {
 				port <- ports
-			} yield s"${port}/tcp"
+			} yield s"$port/tcp"
 
 			val hostConfig: HostConfig = HostConfig.builder()
 			  .extraHosts(extraHosts.asJava)
@@ -140,7 +131,6 @@ class DockerClient (val imageName: String, val hostname: String = "localhost") {
 			  .networkMode("bridge")
 			  .portBindings(
 				  portBindingsMap.toMap.asJava)
-			  // Map(s"${port}/tcp" -> List(PortBinding.of("0.0.0.0", externalPort)).asJava).asJava)
 			  .build()
 
 			val config = ContainerConfig.builder()
@@ -158,6 +148,13 @@ class DockerClient (val imageName: String, val hostname: String = "localhost") {
 				docker.startContainer(containerId)
 			} catch {
 				case e:DockerRequestException => println("error:" + e.message())
+			}
+
+			val containerInfo = docker.inspectContainer(containerId)
+			if (DockerUtils.dockerMachine) {
+				containerIp = apiAddress
+			} else {
+				containerIp = containerInfo.networkSettings().ipAddress()
 			}
 
 		} catch {
@@ -252,8 +249,14 @@ class DockerClient (val imageName: String, val hostname: String = "localhost") {
 	}
 
 	def reuseContainer(c: Option[Container]): Unit = {
+		println(c.get)
 		if (c.isDefined && c.get.image() == imageName) {
-			dockerIp = DockerUtils.getIp()
+			if (DockerUtils.dockerMachine) {
+				containerIp = apiAddress
+			} else {
+				val containerInfo = docker.inspectContainer(containerId)
+				containerIp = containerInfo.networkSettings().ipAddress()
+			}
 			containerId = c.get.id()
 			//			initExisting(containerId)
 		}

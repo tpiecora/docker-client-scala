@@ -1,6 +1,5 @@
-package com.tpiecora.dockerclient.tests
+package com.github.tpiecora.dockerclient
 
-import com.tpiecora.dockerclient.{DockerClient, DockerUtils}
 import org.scalatest.{FlatSpec, Matchers}
 
 /**

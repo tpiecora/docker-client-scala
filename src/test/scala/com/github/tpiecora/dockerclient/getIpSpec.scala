@@ -1,6 +1,5 @@
-package com.tpiecora.dockerclient.tests
+package com.github.tpiecora.dockerclient
 
-import com.tpiecora.dockerclient._
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
@@ -10,11 +9,11 @@ class getIpSpec extends FlatSpec with Matchers {
 
 	"stopped docker-machine IP" must "be null" in {
 		DockerUtils.stopDockerMachine()
-		assert(DockerUtils.getIp() == null )
+		assert(DockerUtils.getApiAddress() == null )
 	}
 
 	"running docker-machine IP" must "not be null" in {
 		DockerUtils.startDockerMachine()
-		assert(DockerUtils.getIp().length > 6 )
+		assert(DockerUtils.getApiAddress().length > 6 )
 	}
 }
